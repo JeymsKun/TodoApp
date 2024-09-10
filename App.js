@@ -1,50 +1,74 @@
-import { useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, TextInput, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity } from 'react-native';
 
 export default function App() {
-  const [layouts, setLayouts] = useState([{ id: 1, task: '' }]);
+  const [task, setTask] = useState('');
+  const [tasks, setTasks] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTask, setCurrentTask] = useState(null);
 
   const addTask = () => {
-    setLayouts([...layouts, { id: layouts.length + 1, task: '' }]);
+    if (task.trim()) {
+      setTasks([...tasks, { key: Math.random().toString(), value: task }]);
+      setTask('');
+    } 
   };
 
-  const updateTask = (id, text) => {
-    setLayouts(layouts.map(layout => layout.id === id ? { ...layout, task: text } : layout));
+  const editTask = (taskKey) => {
+    const taskToEdit = tasks.find(task => task.key === taskKey);
+    setCurrentTask(taskToEdit);
+    setTask(taskToEdit.value);
+    setIsEditing(true);
   };
 
-  const deleteTask = (id) => {
-    if (layouts.length === 1) {
-      setLayouts([{ id: 1, task: '' }]);
-    } else {
-      setLayouts(layouts.filter(layout => layout.id !== id));
+  const updateTask = () => {
+    if (task.trim()) {
+      setTasks(tasks.map(t => 
+        t.key === currentTask.key ? { ...t, value: task } : t
+      ));
+      setTask('');
+      setIsEditing(false);
+      setCurrentTask(null);
     }
+  };
+
+  const removeTask = (taskKey) => {
+    setTasks(tasks.filter(task => task.key !== taskKey));
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.textHeader}>YOUR TODAY'S TASK</Text>
-      <StatusBar style="auto" />
-      
-      <ScrollView contentContainerStyle={styles.scrollView}>
-
-        {layouts.map(layout => (
-          <View key={layout.id} style={styles.wrapBox}>
-            <View style={styles.wrapButton}>
-              <View style={styles.button}>
-                <Button title="ADD" onPress={addTask} color="rgb(255, 186, 186)" />
-              </View>
-              <View style={styles.button}>
-                <Button title="DEL" onPress={() => deleteTask(layout.id)} color="rgb(255, 186, 186)" />
-              </View>
-            </View>
-
-            <View style={styles.wrapTextInput}>
-              <TextInput style={styles.input} placeholder='What task do you want to do?' value={layout.task} onChangeText={(text)  => updateTask(layout.id, text)} multiline={true} numberOfLines={4} />
+      <Text style={styles.title}>Your Today's Task</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="What task do you want to do?"
+        value={task}
+        onChangeText={setTask}
+        multiline={true} 
+        numberOfLines={4}
+      />
+      <TouchableOpacity 
+        style={styles.customButton} 
+        onPress={isEditing ? updateTask : addTask}
+      >
+        <Text style={styles.buttonText}>{isEditing ? "Update Task" : "Add Task"}</Text>
+      </TouchableOpacity>
+      <FlatList
+        data={tasks}
+        renderItem={({ item }) => (
+          <View style={styles.task}>
+            <Text style={styles.taskText}>{item.value}</Text>
+            <View style={styles.buttons}>
+              <TouchableOpacity onPress={() => editTask(item.key)}>
+                <Text style={styles.edit}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => removeTask(item.key)}>
+                <Text style={styles.delete}>Delete</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        ))}
-      </ScrollView>
+        )}
+      />
     </View>
   );
 }
@@ -52,53 +76,57 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 50,
+    padding: 50,
   },
-
-  textHeader: {
+  title: {
     fontSize: 25,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginTop: 70,
+    marginBottom: 10,
   },
-
-  scrollView: {
-    alignItems: 'center',
-    paddingBottom: 20,
+  input: {
+    borderBottomColor: 'black',
+    marginBottom: -15,
+    padding: 5,
+    fontSize: 16,
   },
-
-  wrapBox: {
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: 'rgb(255, 217, 217)',
-    borderRadius: 20,
-    padding: 10,
-    marginBottom: 20,
-  },
-
-  wrapButton: {
+  task: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
-  },
-
-  button: {
-    margin: 5,
+    padding: 20,
+    marginVertical: 5,
+    backgroundColor: '#b3d7ff',
+    borderColor: '#007BFF',
+    borderWidth: 1,
+    marginTop: 20,
     borderRadius: 10,
-    overflow: 'hidden',
+    alignItems: 'center',
   },
-
-  wrapTextInput: {
-    marginTop: 10,
-    width: '100%',
-  },
-  
-  input: {
-    fontSize: 20,
+  customButton: {
+    backgroundColor: '#007BFF',
     padding: 10,
     borderRadius: 10,
-    
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  taskText: {
+    flex: 1,
+    fontSize: 16,
+  },
+  buttons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  edit: {
+    color: 'blue',
+    marginRight: 10,
+    padding: 10,
+  },
+  delete: {
+    color: 'red',
   },
 });
